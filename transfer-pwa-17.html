@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Transfer">
+<meta name="theme-color" content="#ffffff">
+<title>Transfer Takip</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Unbounded:wght@400;600;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f5f6fa; --card:#ffffff; --card2:#f0f1f6; --border:#e2e4ec;
+    --accent:#00a86b; --adim:rgba(0,168,107,0.10);
+    --orange:#e85d2f; --odim:rgba(232,93,47,0.10);
+    --yellow:#c47d0a; --ydim:rgba(196,125,10,0.10);
+    --blue:#2563eb; --bdim:rgba(37,99,235,0.10);
+    --green:#16a34a; --gdim:rgba(22,163,74,0.10);
+    --text:#1a1a2e; --muted:#6b7280; --light:#9ca3af;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100dvh;padding-bottom:32px;}
+
+  .topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 6px rgba(0,0,0,0.06);}
+  .app-title{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:900;color:var(--accent);}
+  .topbar-right{display:flex;align-items:center;gap:8px;}
+  .clock{font-size:11px;color:var(--muted);}
+  .clock span{color:var(--accent);font-weight:500;}
+  .icon-btn{background:var(--bdim);color:var(--blue);border:1px solid rgba(37,99,235,0.2);font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;border-radius:8px;cursor:pointer;}
+
+  .content{padding:12px;}
+
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+  .panel-title{font-size:9px;color:var(--light);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+
+  input,textarea,select{flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:9px 11px;border-radius:9px;outline:none;min-width:0;transition:border-color 0.2s;}
+  input::placeholder,textarea::placeholder{color:var(--light);font-size:11px;}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);background:#fff;}
+  input[type="time"]{flex:none;width:98px;}
+  select{cursor:pointer;}
+  textarea{width:100%;resize:vertical;line-height:1.6;font-size:12px;}
+  .row{display:flex;gap:7px;margin-bottom:7px;}
+
+  .btn{background:var(--accent);color:#fff;border:none;font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;padding:10px 14px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:opacity 0.15s,transform 0.1s;}
+  .btn:active{transform:scale(0.95);opacity:0.8;}
+  .btn.ghost{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+  .btn.blue{background:var(--bdim);color:var(--blue);border:1px solid rgba(37,99,235,0.2);}
+  .btn.green{background:var(--gdim);color:var(--green);border:1px solid rgba(22,163,74,0.2);}
+  .btn.red{background:var(--odim);color:var(--orange);border:1px solid rgba(232,93,47,0.2);}
+  .btn.sm{font-size:9px;padding:7px 11px;}
+  .btn.full{width:100%;margin-top:7px;}
+
+  .sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .sec-title{font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+  .badge{font-size:10px;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:3px 9px;border-radius:20px;}
+
+  /* CARDS */
+  .flights{display:flex;flex-direction:column;gap:9px;}
+  .fcard{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.05);transition:box-shadow 0.2s;}
+  .fbar{height:3px;}
+  .fbar.scheduled{background:#d1d5db;}
+  .fbar.waiting{background:#f59e0b;}
+  .fbar.landed{background:var(--accent);}
+  .fbar.arrived{background:var(--blue);}
+  .fbar.ready{background:linear-gradient(90deg,var(--accent),#f59e0b);animation:shimmer 2s infinite;}
+  .fbar.teslim{background:var(--green);}
+  @keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.5}}
+
+  .fbody{padding:12px 14px;}
+  .frow1{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px;}
+  .fnum{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:900;color:var(--text);}
+  .fright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+
+  .pill{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--card2);color:var(--muted);border:1px solid var(--border);}
+  .pill.waiting{background:#fef3c7;color:#92400e;border-color:#fcd34d;}
+  .pill.landed{background:var(--adim);color:var(--accent);border-color:rgba(0,168,107,0.3);}
+  .pill.arrived{background:var(--bdim);color:var(--blue);border-color:rgba(37,99,235,0.3);}
+  .pill.ready{background:var(--adim);color:var(--accent);border-color:rgba(0,168,107,0.3);animation:pulse 1.5s infinite;}
+  .pill.teslim{background:var(--gdim);color:var(--green);border-color:rgba(22,163,74,0.3);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+  /* INLINE EDIT FIELDS */
+  .inline-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;}
+  .ifield{background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:7px 9px;cursor:pointer;transition:border-color 0.15s;}
+  .ifield:hover{border-color:var(--accent);}
+  .ifield.editing{border-color:var(--accent);background:#fff;cursor:auto;}
+  .ifield-label{font-size:7px;color:var(--light);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+  .ifield-val{font-size:13px;font-weight:500;color:var(--text);}
+  .ifield-val.accent{color:var(--accent);}
+  .ifield-val.yellow{color:var(--yellow);}
+  .ifield-val.muted{color:var(--muted);}
+  .ifield input{background:transparent;border:none;padding:0;font-size:13px;font-weight:500;width:100%;color:var(--text);}
+  .ifield input:focus{background:transparent;border:none;}
+
+  /* AGENCY INLINE */
+  .agency-row{display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+  .agency-field{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:6px 9px;cursor:pointer;}
+  .agency-field:hover{border-color:var(--accent);}
+  .agency-field.editing{border-color:var(--accent);background:#fff;}
+  .agency-label{font-size:7px;color:var(--light);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;}
+  .agency-val{font-size:11px;color:var(--muted);}
+  .agency-field input{background:transparent;border:none;padding:0;font-size:11px;width:100%;color:var(--text);}
+
+  .info-row{display:flex;align-items:center;justify-content:space-between;padding-top:9px;border-top:1px solid var(--border);gap:8px;}
+  .pname{font-size:11px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cdwn{font-size:11px;font-weight:500;color:var(--yellow);white-space:nowrap;}
+  .cdwn.ready{color:var(--accent);}
+  .cdwn.gone{color:var(--light);}
+  .cdwn.blue{color:var(--blue);}
+
+  .driver-row{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f8faff;border-top:1px solid var(--border);}
+  .driver-info{flex:1;min-width:0;}
+  .driver-name{font-size:11px;color:var(--blue);}
+  .driver-plate{font-size:10px;color:var(--muted);margin-top:1px;}
+  .call-btn{background:var(--bdim);color:var(--blue);border:1px solid rgba(37,99,235,0.2);font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;padding:6px 11px;border-radius:8px;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:3px;}
+  .no-driver{font-size:10px;color:var(--light);padding:8px 14px;border-top:1px solid var(--border);cursor:pointer;}
+  .no-driver:hover{color:var(--blue);}
+
+  .factions{display:flex;border-top:1px solid var(--border);}
+  .fact{flex:1;background:transparent;border:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;padding:10px 4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;transition:background 0.15s;}
+  .fact:not(:last-child){border-right:1px solid var(--border);}
+  .fact:active{background:var(--card2);}
+  .fact.f-arrived{color:var(--blue);}
+  .fact.f-teslim{color:var(--green);}
+  .fact.f-alarm{color:var(--yellow);}
+  .fact.f-del{color:var(--orange);}
+
+  /* TESLIM SECTION */
+  .teslim-section{margin-top:18px;display:none;}
+  .teslim-card{opacity:0.8;}
+
+  /* PREVIEW */
+  .import-preview{display:none;margin-top:10px;}
+  .import-preview.show{display:block;}
+  .preview-title{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;}
+  .preview-table{width:100%;border-collapse:collapse;font-size:11px;}
+  .preview-table th{color:var(--muted);font-weight:400;text-align:left;padding:3px 5px;border-bottom:1px solid var(--border);font-size:8px;letter-spacing:1px;text-transform:uppercase;}
+  .preview-table td{padding:5px;border-bottom:1px solid rgba(226,228,236,0.5);}
+  .preview-table tr:last-child td{border-bottom:none;}
+  .import-actions{display:flex;gap:7px;margin-top:9px;}
+
+  /* MODALS */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);}
+  .overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:20px 20px 0 0;padding:22px 18px 40px;width:100%;max-width:500px;animation:slideUp 0.3s ease;max-height:90dvh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,0.10);}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .modal-title{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;}
+  .modal-sub{font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6;}
+  .modal-btns{display:flex;gap:7px;margin-top:12px;}
+
+  .alarm-options{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+  .alarm-opt{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:2px solid var(--border);border-radius:10px;padding:11px 13px;cursor:pointer;transition:border-color 0.15s;}
+  .alarm-opt.selected{border-color:var(--accent);}
+  .opt-label{font-size:12px;color:var(--text);}
+  .opt-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+  .opt-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;transition:all 0.15s;}
+  .alarm-opt.selected .opt-check{background:var(--accent);border-color:var(--accent);}
+
+  .driver-list{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+  .driver-item{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+  .d-name{font-size:12px;color:var(--text);}
+  .d-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+
+  .divider{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:9px;color:var(--light);letter-spacing:1.5px;}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#fff;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;padding:11px 20px;border-radius:28px;opacity:0;transition:opacity 0.3s,transform 0.3s;z-index:999;pointer-events:none;box-shadow:0 8px 24px rgba(0,168,107,0.3);max-width:88vw;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.warn{background:#f59e0b;box-shadow:0 8px 24px rgba(245,158,11,0.3);}
+  .toast.blue{background:var(--blue);box-shadow:0 8px 24px rgba(37,99,235,0.3);}
+  .toast.green{background:var(--green);box-shadow:0 8px 24px rgba(22,163,74,0.3);}
+
+  .empty{text-align:center;padding:44px 20px;color:var(--light);}
+  .empty-icon{font-size:38px;margin-bottom:10px;}
+  .empty-text{font-size:11px;letter-spacing:1px;line-height:1.8;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="app-title">✈ TRANSFER</div>
+  <div class="topbar-right">
+    <div class="clock">Şu an: <span id="clock">--:--</span></div>
+    <button class="icon-btn" onclick="openDriversModal()">👤 Şoförler</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- MANUEL EKLE -->
+  <div class="panel">
+    <div class="panel-title">Manuel Transfer Ekle</div>
+    <div style="font-size:10px;color:var(--light);margin-bottom:7px;">saat/uçuşkodu/yolcu adı/kişi sayısı/acente</div>
+    <div class="row">
+      <input type="text" id="inQuick" placeholder="14:30/TK1234/Ali Veli/2/Sunset Tours" style="font-size:12px;">
+    </div>
+    <button class="btn full" onclick="addFlight()">+ EKLE</button>
+    <div style="font-size:11px;color:var(--orange);background:var(--odim);border:1px solid rgba(232,93,47,0.2);border-radius:7px;padding:7px 10px;margin-top:5px;display:none;" id="errMsg"></div>
+  </div>
+
+  <!-- TOPLU YAPIŞTIR -->
+  <div class="panel">
+    <div class="panel-title">Google Sheets'ten Toplu Yapıştır</div>
+    <textarea id="pasteBox" rows="3" placeholder="Sheets'ten kopyala, buraya yapıştır...&#10;Format: Saat  UçuşKodu  Yolcu  Kişi  Acente"></textarea>
+    <button class="btn full" onclick="parsePaste()">AKTAR</button>
+    <div class="import-preview" id="importPreview">
+      <div class="preview-title">Önizleme — <span id="previewCount">0</span> satır</div>
+      <div style="overflow-x:auto;"><table class="preview-table" id="previewTable"></table></div>
+      <div class="import-actions">
+        <button class="btn ghost sm" style="flex:1" onclick="clearImport()">İptal</button>
+        <button class="btn sm" style="flex:2" onclick="confirmImport()">✓ Listeye Ekle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AKTİF LIST -->
+  <div class="sec-header">
+    <div class="sec-title">Aktif Transferler</div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <div class="badge" id="cnt">0</div>
+      <button class="btn ghost sm" onclick="clearAll()">Temizle</button>
+    </div>
+  </div>
+  <div class="flights" id="list"></div>
+
+  <!-- TESLİM LİSTESİ -->
+  <div class="teslim-section" id="teslimSection">
+    <div class="sec-header" style="margin-top:4px;">
+      <div class="sec-title" style="color:var(--green);">✓ Teslim Edilenler</div>
+      <div class="badge" id="teslimCnt">0</div>
+    </div>
+    <div class="flights" id="teslimList"></div>
+  </div>
+
+</div>
+
+<!-- ALARM MODAL -->
+<div class="overlay" id="alarmOverlay">
+  <div class="modal">
+    <div class="modal-title">⏰ Alarm Kur</div>
+    <div class="modal-sub" id="alarmSub"></div>
+    <div class="alarm-options" id="alarmOpts"></div>
+    <div class="modal-btns">
+      <button class="btn ghost" style="flex:1" onclick="closeModal('alarmOverlay')">İptal</button>
+      <button class="btn" style="flex:1" onclick="confirmAlarm()">Kur</button>
+    </div>
+  </div>
+</div>
+
+<!-- ŞOFÖR ATA MODAL -->
+<div class="overlay" id="assignOverlay">
+  <div class="modal">
+    <div class="modal-title">🚗 Şoför Ata</div>
+    <div class="modal-sub" id="assignSub"></div>
+    <div class="panel-title">Kayıtlı Şoförler</div>
+    <div id="assignDriverList" style="margin-bottom:10px;"></div>
+    <div class="divider">veya elle gir</div>
+    <div style="font-size:10px;color:var(--light);margin-bottom:7px;">ad/plaka/telefon</div>
+    <div class="row">
+      <input type="text" id="tmpQuick" placeholder="Ahmet/34ABC123/0555..." style="font-size:12px;">
+    </div>
+    <div class="modal-btns">
+      <button class="btn ghost" style="flex:1" onclick="closeModal('assignOverlay')">İptal</button>
+      <button class="btn blue" style="flex:1" onclick="assignCustomDriver()">Ata</button>
+    </div>
+  </div>
+</div>
+
+<!-- ŞOFÖR YÖNETİM MODAL -->
+<div class="overlay" id="driversOverlay">
+  <div class="modal">
+    <div class="modal-title">👤 Şoför Listesi</div>
+    <div class="modal-sub">Şoförleri buradan yönet</div>
+    <div class="driver-list" id="driverList"></div>
+    <div class="panel-title">Yeni Şoför Ekle</div>
+    <div style="font-size:10px;color:var(--light);margin-bottom:7px;">ad soyad/plaka/telefon</div>
+    <div class="row">
+      <input type="text" id="dQuick" placeholder="Ahmet Yılmaz/34ABC123/05551234567" style="font-size:12px;">
+    </div>
+    <div class="modal-btns">
+      <button class="btn ghost" style="flex:1" onclick="closeModal('driversOverlay')">Kapat</button>
+      <button class="btn" style="flex:1" onclick="addDriver()">+ Ekle</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STORAGE (IndexedDB için fallback localStorage) ───────
+const STORE_KEY = 'tf5';
+const DRV_KEY   = 'tf5_drv';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch(e){ return []; }
+}
+function loadDrivers() {
+  try { return JSON.parse(localStorage.getItem(DRV_KEY) || '[]'); } catch(e){ return []; }
+}
+function save() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(flights));
+    localStorage.setItem(DRV_KEY, JSON.stringify(drivers));
+  } catch(e) { toast('Kayıt hatası!','warn'); }
+}
+
+let flights = loadData();
+let drivers = loadDrivers();
+let activeAlarms = {};
+let alarmModal   = { flightId:null, selected:null, opts:[] };
+let assignModal  = { flightId:null };
+
+// ── CLOCK ────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── TOAST ────────────────────────────────────────────────
+let _tt;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show'+(type?' '+type:'');
+  clearTimeout(_tt);
+  _tt = setTimeout(()=>el.classList.remove('show'), 3200);
+}
+
+// ── UTILS ────────────────────────────────────────────────
+function todayAt(t) {
+  const [h,m] = t.split(':').map(Number);
+  const d = new Date(); d.setHours(h,m,0,0);
+  return d.toISOString();
+}
+function fmt(iso) {
+  if (!iso) return '--:--';
+  return new Date(iso).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+}
+function minsUntil(iso) {
+  if (!iso) return null;
+  return Math.round((new Date(iso)-Date.now())/60000);
+}
+function addMins(iso,m) {
+  return new Date(new Date(iso).getTime()+m*60000).toISOString();
+}
+function exitISO(f) {
+  return addMins(f.actualISO||f.plannedISO, 60);
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// ── ADD FLIGHT ───────────────────────────────────────────
+function addFlight() {
+  const raw = document.getElementById('inQuick').value.trim();
+  const err = document.getElementById('errMsg');
+  if (!raw) { err.textContent='Bilgi gir'; err.style.display='block'; return; }
+  const parts = raw.split('/').map(s=>s.trim());
+  const timeStr = parts[0]||'';
+  const num     = (parts[1]||'').toUpperCase();
+  const pax     = parts[2]||'';
+  // 3. alan sayıysa kişi sayısı, değilse acente
+  let paxCnt = '', agency = '';
+  if (parts[3] && /^\d+$/.test(parts[3])) {
+    paxCnt = parts[3];
+    agency = parts[4]||'';
+  } else {
+    agency = parts[3]||'';
+  }
+  if (!timeStr||!num) { err.textContent='Format: saat/uçuş/yolcu/acente'; err.style.display='block'; return; }
+  if (!/^\d{1,2}:\d{2}$/.test(timeStr)) { err.textContent='Saat formatı: 14:30'; err.style.display='block'; return; }
+  err.style.display='none';
+  const paxLabel = pax + (paxCnt && parseInt(paxCnt)>1 ? ' +'+(parseInt(paxCnt)-1) : '');
+  flights.unshift({ id:Date.now(), number:num, passenger:paxLabel, agency, plannedISO:todayAt(timeStr), actualISO:null, arrivedAt:null, teslimAt:null, driver:null });
+  document.getElementById('inQuick').value='';
+  save(); render();
+  toast(`${num} eklendi ✓`);
+}
+
+// ── PASTE IMPORT ─────────────────────────────────────────
+let pendingRows = [];
+function parsePaste() {
+  const text = document.getElementById('pasteBox').value.trim();
+  if (!text) { toast('Önce yapıştır','warn'); return; }
+  const rows = [];
+  for (const line of text.split(/\r?\n/).filter(Boolean)) {
+    const c = line.split('\t');
+    const timeStr = String(c[0]||'').trim();
+    const code    = String(c[1]||'').trim().toUpperCase();
+    const name    = String(c[2]||'').trim();
+    const paxCnt  = String(c[3]||'').trim();
+    const agency  = String(c[4]||'').trim();
+    if (!timeStr||!code) continue;
+    if (!/^\d{1,2}:\d{2}$/.test(timeStr)) continue;
+    const paxLabel = name+(paxCnt&&parseInt(paxCnt)>1?' +'+(parseInt(paxCnt)-1):'');
+    rows.push({timeStr,code,name,paxCnt:paxCnt||'1',paxLabel,agency});
+  }
+  if (!rows.length) { toast('Satır okunamadı','warn'); return; }
+  pendingRows = rows;
+  document.getElementById('previewCount').textContent = rows.length;
+  document.getElementById('previewTable').innerHTML =
+    `<tr><th>Saat</th><th>Uçuş</th><th>Yolcu</th><th>Kişi</th><th>Acente</th></tr>`+
+    rows.map(r=>`<tr><td>${r.timeStr}</td><td>${r.code}</td><td>${r.name||'—'}</td><td>${r.paxCnt}</td><td>${r.agency||'—'}</td></tr>`).join('');
+  document.getElementById('importPreview').classList.add('show');
+}
+function clearImport() {
+  pendingRows=[];
+  document.getElementById('importPreview').classList.remove('show');
+  document.getElementById('pasteBox').value='';
+}
+function confirmImport() {
+  pendingRows.forEach(r=>{
+    flights.push({id:Date.now()+Math.random(),number:r.code,passenger:r.paxLabel,agency:r.agency||'',plannedISO:todayAt(r.timeStr),actualISO:null,arrivedAt:null,teslimAt:null,driver:null});
+  });
+  save(); render();
+  toast(`${pendingRows.length} transfer eklendi ✓`);
+  clearImport();
+}
+function clearAll() {
+  if (!confirm('Tüm aktif transferleri sil?')) return;
+  flights = flights.filter(f=>f.teslimAt);
+  save(); render();
+}
+
+// ── INLINE EDIT ──────────────────────────────────────────
+function startEdit(id, field) {
+  const f = flights.find(x=>x.id===id);
+  if (!f) return;
+  const cellId = `cell_${field}_${id}`;
+  const cell = document.getElementById(cellId);
+  if (!cell) return;
+  cell.classList.add('editing');
+  const inp = cell.querySelector('input');
+  if (inp) { inp.focus(); inp.select(); }
+}
+
+function commitEdit(id, field, value) {
+  const f = flights.find(x=>x.id===id);
+  if (!f) return;
+  const cellId = `cell_${field}_${id}`;
+  const cell = document.getElementById(cellId);
+  if (cell) cell.classList.remove('editing');
+
+  if (field === 'actualISO') {
+    f.actualISO = value ? todayAt(value) : null;
+  } else if (field === 'agency') {
+    f.agency = value;
+  }
+  save(); render();
+}
+
+function handleEditKey(e, id, field) {
+  if (e.key === 'Enter') { commitEdit(id, field, e.target.value); e.target.blur(); }
+  if (e.key === 'Escape') { render(); } // cancel
+}
+
+// ── ACTIONS ──────────────────────────────────────────────
+function deleteFlight(id) {
+  if (!confirm('Sil?')) return;
+  clearTimeout(activeAlarms[id]);
+  delete activeAlarms[id];
+  flights = flights.filter(x=>x.id!==id);
+  save(); render();
+}
+function markArrived(id) {
+  const f = flights.find(x=>x.id===id);
+  if (!f||f.arrivedAt) return;
+  f.arrivedAt = new Date().toISOString();
+  save(); render();
+  toast(`✓ ${f.number} — yolcu geldi!`,'blue');
+}
+function markTeslim(id) {
+  const f = flights.find(x=>x.id===id);
+  if (!f) return;
+  f.teslimAt = new Date().toISOString();
+  save(); render();
+  toast(`✓ ${f.number} teslim edildi`,'green');
+}
+function undoTeslim(id) {
+  const f = flights.find(x=>x.id===id);
+  if (!f) return;
+  f.teslimAt = null;
+  save(); render();
+  toast('Geri alındı');
+}
+function removeDriver(id) {
+  const f = flights.find(x=>x.id===id);
+  if (!f) return;
+  f.driver=null;
+  save(); render();
+}
+
+// ── DRIVERS ──────────────────────────────────────────────
+function openDriversModal() {
+  renderDriverList();
+  document.getElementById('driversOverlay').classList.add('show');
+}
+function addDriver() {
+  const raw   = document.getElementById('dQuick').value.trim();
+  const parts = raw.split('/').map(s=>s.trim());
+  const name  = parts[0]||'';
+  const plate = (parts[1]||'').toUpperCase();
+  const phone = parts[2]||'';
+  if (!name||!plate) { toast('Format: ad/plaka/telefon','warn'); return; }
+  drivers.push({id:Date.now(),name,plate,phone});
+  document.getElementById('dQuick').value='';
+  save(); renderDriverList();
+  toast(`${name} eklendi`);
+}
+function deleteDriver(id) {
+  drivers=drivers.filter(x=>x.id!==id);
+  save(); renderDriverList();
+}
+function renderDriverList() {
+  const el = document.getElementById('driverList');
+  if (!drivers.length) { el.innerHTML='<div style="font-size:11px;color:var(--light);margin-bottom:8px;">Henüz şoför yok</div>'; return; }
+  el.innerHTML = drivers.map(d=>`
+    <div class="driver-item">
+      <div><div class="d-name">${d.name}</div><div class="d-sub">${d.plate}${d.phone?' · '+d.phone:''}</div></div>
+      <button class="btn ghost sm" onclick="deleteDriver(${d.id})">✕</button>
+    </div>`).join('');
+}
+
+// ── ASSIGN DRIVER ─────────────────────────────────────────
+function openAssignModal(id) {
+  const f = flights.find(x=>x.id===id);
+  if (!f) return;
+  assignModal.flightId = id;
+  document.getElementById('assignSub').textContent = `${f.number} — ${f.passenger||'Yolcu'}`;
+  document.getElementById('tmpQuick').value='';
+  const listEl = document.getElementById('assignDriverList');
+  if (!drivers.length) {
+    listEl.innerHTML='<div style="font-size:11px;color:var(--light);margin-bottom:4px;">Kayıtlı şoför yok</div>';
+  } else {
+    listEl.innerHTML = drivers.map(d=>`
+      <div class="driver-item" style="margin-bottom:6px;">
+        <div><div class="d-name">${d.name}</div><div class="d-sub">${d.plate}${d.phone?' · '+d.phone:''}</div></div>
+        <button class="btn blue sm" onclick="assignDriver(${d.id})">Ata</button>
+      </div>`).join('');
+  }
+  document.getElementById('assignOverlay').classList.add('show');
+}
+function assignDriver(driverId) {
+  const f = flights.find(x=>x.id===assignModal.flightId);
+  const d = drivers.find(x=>x.id===driverId);
+  if (!f||!d) return;
+  f.driver={name:d.name,plate:d.plate,phone:d.phone};
+  save(); render();
+  closeModal('assignOverlay');
+  toast(`${d.name} atandı`);
+}
+function assignCustomDriver() {
+  const f = flights.find(x=>x.id===assignModal.flightId);
+  if (!f) return;
+  const raw   = document.getElementById('tmpQuick').value.trim();
+  const parts = raw.split('/').map(s=>s.trim());
+  const name  = parts[0]||'';
+  const plate = (parts[1]||'').toUpperCase();
+  const phone = parts[2]||'';
+  if (!name&&!plate) { toast('Ad veya plaka gir','warn'); return; }
+  f.driver={name,plate,phone};
+  save(); render();
+  closeModal('assignOverlay');
+  toast('Şoför atandı');
+}
+
+// ── ALARM ─────────────────────────────────────────────────
+function openAlarmModal(id) {
+  const f = flights.find(x=>x.id===id);
+  if (!f) return;
+  const eISO = exitISO(f);
+  alarmModal.flightId=id; alarmModal.selected=null;
+  alarmModal.opts=[
+    {label:'Çıkışa 15dk kala',sub:fmt(addMins(eISO,-15)),offset:-15},
+    {label:'Çıkışa 10dk kala',sub:fmt(addMins(eISO,-10)),offset:-10},
+    {label:'Çıkışa 5dk kala', sub:fmt(addMins(eISO,-5)), offset:-5 },
+    {label:'Tam çıkış anı',   sub:fmt(eISO),              offset:0  },
+  ];
+  document.getElementById('alarmSub').textContent=`${f.number}${f.passenger?' — '+f.passenger:''} · çıkış ~${fmt(eISO)}`;
+  document.getElementById('alarmOpts').innerHTML=alarmModal.opts.map((o,i)=>`
+    <div class="alarm-opt" id="opt_${i}" onclick="selectOpt(${i})">
+      <div><div class="opt-label">${o.label}</div><div class="opt-sub">${o.sub}</div></div>
+      <div class="opt-check"></div>
+    </div>`).join('');
+  document.getElementById('alarmOverlay').classList.add('show');
+}
+function selectOpt(i) {
+  document.querySelectorAll('.alarm-opt').forEach(el=>el.classList.remove('selected'));
+  document.getElementById(`opt_${i}`).classList.add('selected');
+  alarmModal.selected=i;
+}
+function confirmAlarm() {
+  if (alarmModal.selected===null) { toast('Seçim yap','warn'); return; }
+  const f=flights.find(x=>x.id===alarmModal.flightId);
+  if (!f) return;
+  const opt=alarmModal.opts[alarmModal.selected];
+  const alarmISO=addMins(exitISO(f),opt.offset);
+  const ms=new Date(alarmISO)-Date.now();
+  clearTimeout(activeAlarms[alarmModal.flightId]);
+  if (ms<=0) { toast('Bu zaman geçmiş!','warn'); closeModal('alarmOverlay'); return; }
+  const fid=alarmModal.flightId;
+  activeAlarms[fid]=setTimeout(()=>{
+    const fl=flights.find(x=>x.id===fid);
+    const msg=`🛬 ${fl?.number||''} — ${fl?.passenger||'Yolcu'} çıkıyor!`;
+    toast(msg,'warn');
+    if (Notification.permission==='granted') new Notification('✈ Transfer',{body:msg});
+    if (navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
+  },ms);
+  toast(`⏰ Alarm: ${fmt(alarmISO)}`);
+  closeModal('alarmOverlay');
+}
+if (Notification.permission==='default') Notification.requestPermission();
+
+// ── STATUS ────────────────────────────────────────────────
+function getStatus(f) {
+  if (f.arrivedAt) return 'arrived';
+  const em=minsUntil(exitISO(f));
+  if (f.actualISO) {
+    if (em!==null&&em<=5&&em>-10) return 'ready';
+    return 'landed';
+  }
+  const pm=minsUntil(f.plannedISO);
+  if (pm!==null&&pm<=30) return 'waiting';
+  return 'scheduled';
+}
+function getCd(f) {
+  if (f.arrivedAt) return {t:'✓ Geldi',cls:'blue'};
+  const em=minsUntil(exitISO(f));
+  if (em===null) return {t:'--',cls:''};
+  if (em<-15) return {t:'Çıktı',cls:'gone'};
+  if (em<=0) return {t:'✓ HAZIR',cls:'ready'};
+  if (f.actualISO) return {t:`Çıkışa ${em}dk`,cls:em<=10?'ready':''};
+  const pm=minsUntil(f.plannedISO);
+  if (pm!==null&&pm>0) return {t:`İnişe ${pm}dk`,cls:''};
+  return {t:`Çıkışa ${em}dk`,cls:em<=10?'ready':''};
+}
+
+// ── BUILD CARD ────────────────────────────────────────────
+function buildCard(f, isTeslim) {
+  const st  = isTeslim ? 'teslim' : getStatus(f);
+  const cd  = getCd(f);
+  const base = f.actualISO||f.plannedISO;
+  const eTime = fmt(addMins(base,60));
+  const actVal = f.actualISO ? fmt(f.actualISO) : '';
+  const pillMap = {scheduled:'',waiting:'waiting',landed:'landed',arrived:'arrived',ready:'ready',teslim:'teslim'};
+  const labelMap = {scheduled:'PLANLI',waiting:'YAKLAŞIYOR',landed:'İNDİ',arrived:'GELDİ',ready:'HAZIR',teslim:'TESLİM'};
+
+  const driverHtml = f.driver
+    ? `<div class="driver-row">
+        <div class="driver-info">
+          <div class="driver-name">🚗 ${f.driver.name||''}${f.driver.plate?' · '+f.driver.plate:''}</div>
+          ${f.driver.phone?`<div class="driver-plate">${f.driver.phone}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;">
+          ${f.driver.phone?`<a class="call-btn" href="tel:${f.driver.phone}">📞 Ara</a>`:''}
+          ${!isTeslim?`<button class="btn ghost sm" onclick="removeDriver(${f.id})">✕</button>`:''}
+        </div>
+      </div>`
+    : (!isTeslim?`<div class="no-driver" onclick="openAssignModal(${f.id})">+ Şoför ata</div>`:'');
+
+  const actions = isTeslim
+    ? `<div class="factions">
+        <button class="fact" onclick="undoTeslim(${f.id})">↩ Geri Al</button>
+        <button class="fact f-del" onclick="deleteFlight(${f.id})">✕ Sil</button>
+      </div>`
+    : `<div class="factions">
+        <button class="fact f-arrived" onclick="markArrived(${f.id})" ${f.arrivedAt?'disabled style="opacity:0.35"':''}>✓ Geldi</button>
+        <button class="fact f-alarm" onclick="openAlarmModal(${f.id})">⏰ Alarm</button>
+        <button class="fact" onclick="openAssignModal(${f.id})">🚗 Şoför</button>
+        <button class="fact f-teslim" onclick="markTeslim(${f.id})">✓ Teslim</button>
+        <button class="fact f-del" onclick="deleteFlight(${f.id})">✕</button>
+      </div>`;
+
+  return `
+  <div class="fcard${isTeslim?' teslim-card':''}">
+    <div class="fbar ${st}"></div>
+    <div class="fbody">
+      <div class="frow1">
+        <div class="fnum">${f.number}</div>
+        <div class="fright">
+          <div class="pill ${pillMap[st]||''}">${labelMap[st]||'PLANLI'}</div>
+        </div>
+      </div>
+
+      <!-- INLINE EDIT GRID: Plan İniş | Gerçek İniş | Çıkış -->
+      <div class="inline-grid">
+        <div class="ifield">
+          <div class="ifield-label">Plan. İniş</div>
+          <div class="ifield-val muted">${fmt(f.plannedISO)}</div>
+        </div>
+        <div class="ifield ${actVal?'':''}\" id="cell_actualISO_${f.id}" onclick="startEdit(${f.id},'actualISO')">
+          <div class="ifield-label">Gerçek İniş ✏</div>
+          <div class="ifield-val accent" id="val_actualISO_${f.id}">${actVal||'—'}</div>
+          <input type="time" value="${actVal}" style="display:none;position:absolute;"
+            onblur="commitEdit(${f.id},'actualISO',this.value)"
+            onkeydown="handleEditKey(event,${f.id},'actualISO')"
+            onfocus="this.style.display='block';document.getElementById('val_actualISO_${f.id}').style.display='none'">
+        </div>
+        <div class="ifield">
+          <div class="ifield-label">Çıkış ~</div>
+          <div class="ifield-val yellow">${(f.arrivedAt||isTeslim)?'✓':eTime}</div>
+        </div>
+      </div>
+
+      <!-- AGENCY INLINE -->
+      <div class="agency-row">
+        <div class="agency-field" id="cell_agency_${f.id}" onclick="startEdit(${f.id},'agency')">
+          <div class="agency-label">Acente ✏</div>
+          <div class="agency-val" id="val_agency_${f.id}">${f.agency||'— tıkla ekle'}</div>
+          <input type="text" value="${f.agency||''}" placeholder="Acente adı" style="display:none;"
+            onblur="commitEdit(${f.id},'agency',this.value)"
+            onkeydown="handleEditKey(event,${f.id},'agency')"
+            onfocus="this.style.display='block';document.getElementById('val_agency_${f.id}').style.display='none'">
+        </div>
+        <div class="cdwn ${cd.cls}" style="white-space:nowrap;font-size:11px;">${isTeslim?'✓ Teslim':cd.t}</div>
+      </div>
+
+      <div class="info-row">
+        <div class="pname">${f.passenger||'—'}</div>
+      </div>
+    </div>
+    ${driverHtml}
+    ${actions}
+  </div>`;
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function render() {
+  const list       = document.getElementById('list');
+  const teslimList = document.getElementById('teslimList');
+  const teslimSec  = document.getElementById('teslimSection');
+
+  const active = flights.filter(f=>!f.teslimAt);
+  const teslim = flights.filter(f=> f.teslimAt);
+
+  document.getElementById('cnt').textContent = `${active.length} uçuş`;
+
+  const geldi    = active.filter(f=>f.arrivedAt).sort((a,b)=>new Date(b.arrivedAt)-new Date(a.arrivedAt));
+  const bekleyen = active.filter(f=>!f.arrivedAt).sort((a,b)=>new Date(exitISO(a))-new Date(exitISO(b)));
+  const sorted   = [...geldi,...bekleyen];
+
+  list.innerHTML = sorted.length
+    ? sorted.map(f=>buildCard(f,false)).join('')
+    : `<div class="empty"><div class="empty-icon">🛬</div><div class="empty-text">Transfer yok<br>Yukarıdan ekle</div></div>`;
+
+  if (teslim.length) {
+    teslimSec.style.display='block';
+    document.getElementById('teslimCnt').textContent=teslim.length;
+    teslimList.innerHTML=teslim.sort((a,b)=>new Date(b.teslimAt)-new Date(a.teslimAt)).map(f=>buildCard(f,true)).join('');
+  } else {
+    teslimSec.style.display='none';
+  }
+
+  // Re-attach inline edit inputs properly
+  document.querySelectorAll('.ifield.editing input, .agency-field.editing input').forEach(inp=>{
+    inp.style.display='block';
+  });
+}
+
+// ── startEdit: show input, hide value text ────────────────
+function startEdit(id, field) {
+  const cellId = `cell_${field}_${id}`;
+  const valId  = `val_${field}_${id}`;
+  const cell   = document.getElementById(cellId);
+  const val    = document.getElementById(valId);
+  if (!cell) return;
+  cell.classList.add('editing');
+  const inp = cell.querySelector('input');
+  if (!inp) return;
+  inp.style.display='block';
+  if (val) val.style.display='none';
+  inp.focus();
+  if (inp.type!=='time') inp.select();
+}
+
+setInterval(render, 30000);
+render();
+</script>
+</body>
+</html>
